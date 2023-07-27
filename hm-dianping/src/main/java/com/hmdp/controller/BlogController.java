@@ -6,6 +6,7 @@ import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.User;
+import com.hmdp.log.LogApi;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.SystemConstants;
@@ -23,6 +24,7 @@ import java.util.List;
  * @author 虎哥
  * @since 2021-12-22
  */
+@LogApi
 @RestController
 @RequestMapping("/blog")
 public class BlogController {

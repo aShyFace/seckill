@@ -5,6 +5,7 @@ import com.hmdp.dto.LoginFormDTO;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.UserInfo;
+import com.hmdp.log.LogApi;
 import com.hmdp.service.IUserInfoService;
 import com.hmdp.service.IUserService;
 import com.hmdp.utils.UserHolder;
@@ -23,6 +24,7 @@ import javax.servlet.http.HttpSession;
  * @since 2021-12-22
  */
 @Slf4j
+@LogApi
 @RestController
 @RequestMapping("/user")
 public class UserController {
@@ -37,8 +39,8 @@ public class UserController {
      * 发送手机验证码
      */
     @PostMapping("code")
-    public Result sendCode(@RequestParam("phone") String phone, HttpSession session) {
-        return userService.sedCode(phone,session);
+    public Result sendCode(@RequestParam("phone") String phone) {
+        return userService.sedCode(phone);
     }
 
     /**
@@ -46,9 +48,9 @@ public class UserController {
      * @param loginForm 登录参数，包含手机号、验证码；或者手机号、密码
      */
     @PostMapping("/login")
-    public Result login(@RequestBody LoginFormDTO loginForm, HttpSession session){
+    public Result login(@RequestBody LoginFormDTO loginForm){
         // 实现登录功能
-        return userService.login(loginForm, session);
+        return userService.login(loginForm);
     }
 
     /**

@@ -1,7 +1,9 @@
 package com.hmdp.config;
 
 import com.hmdp.utils.LoginInterceptor;
+import com.hmdp.utils.RedisCache;
 import com.hmdp.utils.RefreshTokenInterceptor;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
@@ -12,13 +14,20 @@ import javax.annotation.Resource;
 @Configuration
 public class MvcConfig implements WebMvcConfigurer {
 
-    @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    //@Resource
+    //private RedisCache redisCache;
+
+
+    @Bean
+    public LoginInterceptor getLoginInterceptor(){
+        return  new LoginInterceptor();
+    }
+
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         // 登录拦截器
-        registry.addInterceptor(new LoginInterceptor())
+        registry.addInterceptor(getLoginInterceptor())
                 .excludePathPatterns(
                         "/shop/**",
                         "/voucher/**",

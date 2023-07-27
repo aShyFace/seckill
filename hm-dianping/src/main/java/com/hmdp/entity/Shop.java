@@ -4,10 +4,12 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.hmdp.valid.ValidationGroups;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.Accessors;
 
+import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -30,6 +32,7 @@ public class Shop implements Serializable {
     /**
      * 主键
      */
+    @NotNull(message = "id不能为空", groups = ValidationGroups.updateShop.class)
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 

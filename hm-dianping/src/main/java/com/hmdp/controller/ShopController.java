@@ -5,8 +5,11 @@ import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
+import com.hmdp.log.LogApi;
 import com.hmdp.service.IShopService;
 import com.hmdp.utils.SystemConstants;
+import com.hmdp.valid.ValidationGroups;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -19,6 +22,7 @@ import javax.annotation.Resource;
  * @author 虎哥
  * @since 2021-12-22
  */
+@LogApi
 @RestController
 @RequestMapping("/shop")
 public class ShopController {
@@ -33,7 +37,8 @@ public class ShopController {
      */
     @GetMapping("/{id}")
     public Result queryShopById(@PathVariable("id") Long id) {
-        return Result.ok(shopService.getById(id));
+        Result result = shopService.queryById(id);
+        return result;
     }
 
     /**
@@ -55,10 +60,11 @@ public class ShopController {
      * @return 无
      */
     @PutMapping
-    public Result updateShop(@RequestBody Shop shop) {
+    public Result updateShop(@Validated(value = ValidationGroups.updateShop.class)
+                                 @RequestBody Shop shop) {
         // 写入数据库
-        shopService.updateById(shop);
-        return Result.ok();
+        Result result = shopService.updateShop(shop);
+        return result;
     }
 
     /**

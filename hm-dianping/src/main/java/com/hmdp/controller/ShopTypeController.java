@@ -3,6 +3,7 @@ package com.hmdp.controller;
 
 import com.hmdp.dto.Result;
 import com.hmdp.entity.ShopType;
+import com.hmdp.log.LogApi;
 import com.hmdp.service.IShopTypeService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,6 +20,7 @@ import java.util.List;
  * @author 虎哥
  * @since 2021-12-22
  */
+@LogApi
 @RestController
 @RequestMapping("/shop-type")
 public class ShopTypeController {
