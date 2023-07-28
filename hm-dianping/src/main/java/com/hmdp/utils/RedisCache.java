@@ -1,5 +1,7 @@
 package com.hmdp.utils;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.alibaba.fastjson.JSON;
 import com.hmdp.constant.RedisConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
@@ -9,6 +11,7 @@ import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
@@ -36,6 +39,15 @@ public class RedisCache
      */
     public <T> void setCacheObject(final String key, final T value)
     {
+        // 没有key-value则新增，有则覆盖
+        redisTemplate.opsForValue().set(key, value);
+    }
+
+    public void setObjectWithLogicalExpire(final String key, final Object value, final Long timeout, final TimeUnit timeUnit)
+    {
+        RedisData redisData = new RedisData();
+        redisData.setData(value);
+        redisData.setExpireTime(LocalDateTime.now().plusSeconds(timeUnit.toSeconds(timeout)));
         // 没有key-value则新增，有则覆盖
         redisTemplate.opsForValue().set(key, value);
     }
@@ -206,6 +218,15 @@ public class RedisCache
             redisTemplate.opsForHash().putAll(key, dataMap);
         }
     }
+    public void setCacheObject2Map(final String key, Objects objects)
+    {
+        Map<String, Object> dataMap = BeanUtil.beanToMap(objects);
+        if (dataMap != null) {
+            redisTemplate.opsForHash().putAll(key, dataMap);
+        }
+    }
+
+
 
     /**
      * 获得缓存的Map

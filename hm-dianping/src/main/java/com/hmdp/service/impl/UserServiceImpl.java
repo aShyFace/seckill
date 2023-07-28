@@ -104,8 +104,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements IU
         redisCache.setCacheMap(user_token_key, userDTOMap);
 
         // 7.3 设置有效期（记得加随机值）
-        ThreadLocalRandom rand = ThreadLocalRandom.current();
-        // 区间长度 + 区间最小值
         redisCache.expire(user_token_key, RedisConstant.LOGIN_USER_TOKEN_TTL,
             RedisConstant.LOGIN_USER_TOKEN_TTL_SLAT, TimeUnit.MINUTES);
         return Result.ok(token);

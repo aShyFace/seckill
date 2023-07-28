@@ -72,13 +72,13 @@ public class LogApiAspect {
         try {
             //执行目标方法，获取执行结果
             res = joinPoint.proceed();
-            logger.info("调用{}.{}方法成功，参数为[{}]，返回结果[{}]", typeName, methodName, sb.toString(), JSONObject.toJSONString(res));
+            logger.debug("调用{}.{}方法成功，参数为[{}]，返回结果[{}]", typeName, methodName, sb.toString(), JSONObject.toJSONString(res));
         } catch (Exception e) {
             logger.error("{}.{}方法发生异常", typeName, methodName);
             //如果发生异常，则抛出异常
             throw e;
         } finally {
-            logger.info("{}.{}方法，耗时{}ms", typeName, methodName, (System.currentTimeMillis() - starTime));
+            logger.debug("{}.{}方法，耗时{}ms", typeName, methodName, (System.currentTimeMillis() - starTime));
         }
         //返回执行结果
         return res;

@@ -12,13 +12,15 @@ public class RedisConstant {
   public static final Long CACHE_SHOP_TTL = 60 * 6L;
   public static final Long CACHE_SHOP_TTL_SLAT = 3L;
 
-
+  public static final String NULL = "";
+  public static final Long CACHE_NULL_TTL = 3L;
 
   public static final String SECKILL_STOCK_KEY = "seckill:stock:";
 
-  public static final Long CACHE_NULL_TTL = 2L;
 
   public static final String LOCK_SHOP_KEY = "lock:shop:";
+  public static final String LOCK_SHOP_VALUE = "1";
+  public static final Long LOCK_SHOP_TTL = 10L;
 
 
 }
