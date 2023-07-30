@@ -79,6 +79,17 @@ public class RedisCache
         Long ttl = getRandomTTL(timeout, slat);
         redisTemplate.opsForValue().set(key, value, ttl, timeUnit);
     }
+    public void setCacheObject2Json(final String key, final Object value)
+    {
+        String jsonString = JsonUtil.object2Json(value);
+        redisTemplate.opsForValue().set(key, jsonString);
+    }
+    public void setCacheObject2Json(final String key, final Object value, final Long timeout, final Long slat, final TimeUnit timeUnit)
+    {
+        Long ttl = getRandomTTL(timeout, slat);
+        String jsonString = JsonUtil.object2Json(value);
+        redisTemplate.opsForValue().set(key, jsonString, ttl, timeUnit);
+    }
 
     /**
      * 设置有效时间
@@ -129,7 +140,8 @@ public class RedisCache
     public <T> T getCacheObject(final String key)
     {
         ValueOperations<String, T> operation = redisTemplate.opsForValue();
-        return operation.get(key);
+        T t = operation.get(key);
+        return t;
     }
 
     /**

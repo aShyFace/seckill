@@ -2,30 +2,23 @@ package com.hmdp.service.impl;
 
 import cn.hutool.core.util.BooleanUtil;
 import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.hmdp.constant.RedisConstant;
-import com.hmdp.dto.AppHttpCodeEnum;
 import com.hmdp.dto.Result;
 import com.hmdp.entity.Shop;
 import com.hmdp.log.LogApi;
 import com.hmdp.mapper.ShopMapper;
 import com.hmdp.service.IShopService;
-import com.hmdp.utils.CacheClient;
-import com.hmdp.utils.RedisCache;
-import com.hmdp.utils.RedisConstants;
-import com.hmdp.utils.RedisData;
+import com.hmdp.utils.*;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 import static com.hmdp.constant.RedisConstant.*;
 
@@ -48,14 +41,21 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
   private ShopMapper shopMapper;
 
   @Override
-  public Result queryById(Long id) {
-    Shop shop = queryWithMutex(id); // 1W,10iter, 9.99k qps
-    ////Shop shop = queryWithPassThrough(id);
+  public Shop queryById(Long id) {
+    Shop shop = null;
+    //shop = queryWith(id); // 1W,10iter, 9.99k qps
+    shop = queryWithLogicalExpire(id); // 1W,10iter, 9.99k qps
+    //shop = queryWithPassThrough(id);
+    //try {
+    //  shop = saveShop2Redis(id, 60 * 30L);
+    //} catch (InterruptedException e) {
+    //  throw new RuntimeException(e);
+    //}
     //if (Objects.isNull(shop)){
     //  return Result.fail(AppHttpCodeEnum.QUERY_ERROR);
     //}
-    //Shop shop = shopMapper.selectById(id); // 1W,10iter,5k qps
-    return Result.ok(shop);
+    //shop = shopMapper.selectById(id); // 1W,10iter,5k qps
+    return shop;
   }
 
   @Override
@@ -101,6 +101,11 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     return shop;
   }
 
+  /**
+   * 互斥锁解决缓存击穿
+   * @param id id
+   * @return {@link Shop}
+   */
   public Shop queryWithMutex(Long id){
     String shopKey = String.join("", CACHE_SHOP_KEY, id.toString());
     String shopJson = redisCache.getCacheObject(shopKey);
@@ -115,8 +120,8 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
 
     // 缓存中无数据则先获取所，才能重建数据库
     String lockKey = String.join("", LOCK_SHOP_KEY, id.toString());
+    boolean tryLock = tryLock(lockKey, LOCK_SHOP_VALUE, LOCK_SHOP_TTL);
     try{
-      boolean tryLock = tryLock(lockKey, LOCK_SHOP_VALUE, LOCK_SHOP_TTL);
       // 有锁执行，无锁等待后再次尝试获取锁
       if (!tryLock) {
         Thread.sleep(50);
@@ -150,13 +155,59 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     return shop;
   }
 
+  /**
+   * 因为redis存空数据不支持null，所以要转json或者map
+   * @param id id
+   * @return {@link Shop}
+   */
+  public Shop queryWithLogicalExpire(Long id){
+    String shopKey = String.join("", CACHE_SHOP_KEY, id.toString());
+    String shopJson = redisCache.getCacheObject(shopKey);
+    // 1.未命中返回空
+    if (!StringUtils.hasText(shopJson)) {
+      return null;
+    }
+    // 2.命中则判断是否过期
+    RedisData redisData = JsonUtil.json2Object(
+        shopJson, new TypeReference<RedisData<Shop>>(){});
+    Shop shop = (Shop) redisData.getData();
+    Shop shopNew = null;
+    LocalDateTime expireTime = redisData.getExpireTime();
+    // 3.只有过期且获取到了锁的情况下，需要重建缓存
+    String lockKey = String.join("", LOCK_SHOP_KEY, id.toString());
+    boolean tryLock = tryLock(lockKey, LOCK_SHOP_VALUE, LOCK_SHOP_TTL);
+    if (LocalDateTime.now().isAfter(expireTime) && tryLock) {
+      // DoubleCheck
+      shopJson = redisCache.getCacheObject(shopKey);
+      if (!StringUtils.hasText(shopJson)) {
+        return null;
+      }
+      // 缓存中无数据，则查询数据库
+      try {
+        shopNew = CACHE_REBUILD.submit(() -> {
+          return saveShop2Redis(id, 20L);
+        }).get();
+      } catch (InterruptedException e) {
 
-  public void saveShop2Redis(Long id, Long expireSecond){
+      } catch (ExecutionException e) {
+        throw new RuntimeException(e);
+      } finally {
+        unLock(lockKey);
+      }
+
+    }
+    return Objects.nonNull(shopNew)? shopNew:shop;
+  }
+
+
+  public Shop saveShop2Redis(Long id, Long expireSecond) throws InterruptedException {
+    Thread.sleep(200);
     Shop shop = shopMapper.selectById(id);
     LocalDateTime dateTime = LocalDateTime.now().plusSeconds(expireSecond);
     RedisData redisData = new RedisData(shop, dateTime);
     String sk = String.join("", CACHE_SHOP_KEY, id.toString());
-    redisCache.setCacheObject(sk, redisData);
+    redisCache.setCacheObject2Json(sk, redisData);
+    return shop;
   }
 
   private boolean tryLock(String key, String value, Long ttl){
@@ -167,5 +218,6 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
     Boolean result = redisTemplate.delete(key);
   }
 
+  public static final ExecutorService CACHE_REBUILD = Executors.newFixedThreadPool(10);
 
 }
