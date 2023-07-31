@@ -1,20 +1,27 @@
 package com.hmdp.utils;
 
 import cn.hutool.core.bean.BeanUtil;
+import cn.hutool.core.util.BooleanUtil;
 import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.hmdp.constant.RedisConstant;
+import com.hmdp.entity.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.BoundSetOperations;
 import org.springframework.data.redis.core.HashOperations;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.function.Function;
+import static com.hmdp.constant.RedisConstant.*;
+
+
 
 @SuppressWarnings(value = { "unchecked", "rawtypes" })
 @Component
@@ -45,11 +52,15 @@ public class RedisCache
 
     public void setObjectWithLogicalExpire(final String key, final Object value, final Long timeout, final TimeUnit timeUnit)
     {
-        RedisData redisData = new RedisData();
-        redisData.setData(value);
-        redisData.setExpireTime(LocalDateTime.now().plusSeconds(timeUnit.toSeconds(timeout)));
+        try {
+            Thread.sleep(20);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+        LocalDateTime localTime = LocalDateTime.now().plusSeconds(timeUnit.toSeconds(timeout));
+        RedisData redisData = new RedisData(value, localTime);
         // 没有key-value则新增，有则覆盖
-        redisTemplate.opsForValue().set(key, value);
+        redisTemplate.opsForValue().set(key, redisData);
     }
 
     /**
@@ -143,6 +154,93 @@ public class RedisCache
         T t = operation.get(key);
         return t;
     }
+
+    /**
+     * 通过id获取缓存对象
+     *
+     * @param key        缓存key
+     * @param clazz      clazz
+     * @param dbFallback 查询数据库的函数
+     * @param queryParam 查询参数
+     * @param timeout    超时
+     * @param slat       随机值范围
+     * @param unit       时间单位
+     * @return {@link T}
+     */
+    public <T, E> T queryWithPassThrough(final String key, Class<T> clazz, Function<E, T> dbFallback, E queryParam, final long timeout, final long slat, final TimeUnit unit)
+    {
+        //查不到返回null
+        T data = null;
+        String jsonString = getCacheObject(key);
+        if (StringUtils.hasText(jsonString)) {
+            data = JsonUtil.json2Object(jsonString, clazz);
+            return data;
+        }
+        if (RedisConstant.NULL.equals(jsonString)){
+            return data;
+        }
+
+        T res = dbFallback.apply(queryParam);
+        if (Objects.isNull(res)){
+            setCacheObject(key, RedisConstant.NULL, RedisConstant.CACHE_NULL_TTL, TimeUnit.MINUTES);
+            return null;
+        }
+        setCacheObject2Json(key, res, timeout, slat, unit);
+        return res;
+    }
+
+    /**
+     * 查询与逻辑到期
+     *
+     * @param key        key
+     * @param lockKey    锁的key
+     * @param dbFallback 数据库函数
+     * @param queryParam 查询参数
+     * @param timeout    超时时间
+     * @param unit       时间单位
+     * @return {@link T}
+     */
+    public <T, E> T queryWithLogicalExpire(final String key, String lockKey, Function<E, T> dbFallback, E queryParam, final long timeout, final TimeUnit unit){
+        String json = getCacheObject(key);
+        // 1.未命中返回空
+        if (!StringUtils.hasText(json)) {
+          return null;
+        }
+        // 2.命中则判断是否过期
+        RedisData redisData = JsonUtil.json2Object(
+            json, new TypeReference<RedisData<T>>(){});
+        T t = (T) redisData.getData();
+        T tNew = null;
+        LocalDateTime expireTime = redisData.getExpireTime();
+        // 3.只有过期且获取到了锁的情况下，需要重建缓存
+        //String lockKey = String.join("", LOCK_SHOP_KEY, beanId);
+        boolean tryLock = tryLock(lockKey, LOCK_SHOP_VALUE, LOCK_SHOP_TTL);
+        if (LocalDateTime.now().isAfter(expireTime) && tryLock) {
+          // DoubleCheck
+          json = getCacheObject(key);
+          if (!StringUtils.hasText(json)) {
+            return null;
+          }
+          // 缓存中无数据，则查询数据库
+          try {
+            tNew = CACHE_REBUILD.submit(() -> {
+              T t2 = dbFallback.apply(queryParam);
+              setObjectWithLogicalExpire(key, t2, timeout, unit);
+              return t2;
+            }).get();
+          } catch (InterruptedException e) {
+
+          } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+          } finally {
+            unLock(lockKey);
+          }
+
+        }
+        return Objects.nonNull(tNew)? tNew:t;
+    }
+
+
 
     /**
      * 删除单个对象
@@ -323,4 +421,15 @@ public class RedisCache
     {
         return redisTemplate.keys(pattern);
     }
+
+
+    private boolean tryLock(String key, String value, Long ttl){
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(key, value, ttl, TimeUnit.SECONDS);
+        return BooleanUtil.isTrue(result);
+    }
+    private void unLock(String key){
+        Boolean result = redisTemplate.delete(key);
+    }
+
+    public static final ExecutorService CACHE_REBUILD = Executors.newFixedThreadPool(10);
 }

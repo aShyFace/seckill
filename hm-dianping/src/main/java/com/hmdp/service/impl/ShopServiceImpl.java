@@ -43,8 +43,14 @@ public class ShopServiceImpl extends ServiceImpl<ShopMapper, Shop> implements IS
   @Override
   public Shop queryById(Long id) {
     Shop shop = null;
+    String shopKey = String.join("", CACHE_SHOP_KEY, id.toString());
+    String lockKey = String.join("", LOCK_SHOP_KEY, id.toString());
+    shop = redisCache.queryWithLogicalExpire(shopKey, lockKey,
+      this::getById, id, CACHE_SHOP_TTL, TimeUnit.MINUTES);
+    //shop = redisCache.queryWithPassThrough(shopKey, Shop.class,
+    //  this::getById, id, CACHE_SHOP_TTL, CACHE_SHOP_TTL_SLAT, TimeUnit.MINUTES);
     //shop = queryWith(id); // 1W,10iter, 9.99k qps
-    shop = queryWithLogicalExpire(id); // 1W,10iter, 9.99k qps
+    //shop = queryWithLogicalExpire(id); // 1W,10iter, 9.99k qps
     //shop = queryWithPassThrough(id);
     //try {
     //  shop = saveShop2Redis(id, 60 * 30L);
