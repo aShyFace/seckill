@@ -7,6 +7,8 @@ import com.hmdp.mapper.SeckillVoucherMapper;
 import com.hmdp.service.ISeckillVoucherService;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
+
 /**
  * <p>
  * 秒杀优惠券表，与优惠券是一对一关系 服务实现类
@@ -18,5 +20,8 @@ import org.springframework.stereotype.Service;
 @LogApi
 @Service
 public class SeckillVoucherServiceImpl extends ServiceImpl<SeckillVoucherMapper, SeckillVoucher> implements ISeckillVoucherService {
+  @Resource
+  private SeckillVoucherMapper seckillVoucherMapper;
+
 
 }

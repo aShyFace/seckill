@@ -31,10 +31,10 @@ public class RedisIdWorker {
         long timestamp = nowSecond - BEGIN_TIMESTAMP;
 
         // 2.生成序列号
-        // 2.1.获取当前日期，精确到天
+        // 2.1.获取当前日期，精确到天（redis中，以冒号为分隔的会创建树形结构保存）
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
-        // 2.2.自增长
-        long count = stringRedisTemplate.opsForValue().increment("icr:" + keyPrefix + "" + date);
+        // 2.2.自增长（increment方法会自动创建key）
+        long count = stringRedisTemplate.opsForValue().increment(String.join("", "icr:", keyPrefix, date));
 
         // 3.拼接并返回
         return timestamp << COUNT_BITS | count;

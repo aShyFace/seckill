@@ -3,10 +3,16 @@ package com.hmdp.controller;
 
 import com.hmdp.dto.Result;
 import com.hmdp.log.LogApi;
+import com.hmdp.service.ISeckillVoucherService;
+import com.hmdp.service.IVoucherService;
+import com.hmdp.service.VoucherOrderService;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import javax.annotation.Resource;
+import javax.validation.constraints.Min;
 
 /**
  * <p>
@@ -20,8 +26,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/voucher-order")
 public class VoucherOrderController {
+    @Resource
+    private VoucherOrderService voucherOrderService;
+
     @PostMapping("seckill/{id}")
-    public Result seckillVoucher(@PathVariable("id") Long voucherId) {
-        return Result.fail("功能未完成");
+    public Result seckillVoucher(@Min(1L) @PathVariable("id") Long voucherId) {
+        Result result = voucherOrderService.seckillVoucher(voucherId);
+        return Result.ok(result);
     }
+
+
 }
