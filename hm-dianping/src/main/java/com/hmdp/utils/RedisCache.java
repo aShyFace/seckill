@@ -29,6 +29,9 @@ public class RedisCache
 {
     @Resource
     public RedisTemplate redisTemplate;
+    public RedisTemplate getRedisTemplate() {
+        return redisTemplate;
+    }
 
     public Long getRandomTTL(final Long timeout, final Long slat){
         ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -432,4 +435,10 @@ public class RedisCache
     }
 
     public static final ExecutorService CACHE_REBUILD = Executors.newFixedThreadPool(10);
+
+
+
+
+
+
 }

@@ -15,6 +15,7 @@ import com.hmdp.service.IVoucherService;
 import com.hmdp.service.VoucherOrderService;
 import com.hmdp.utils.RedisCache;
 import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.SimpleRedisLock;
 import com.hmdp.utils.UserHolder;
 import org.springframework.aop.framework.AopContext;
 import org.springframework.stereotype.Service;
@@ -59,16 +60,27 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         }
 
         Long userId = UserHolder.getUser().getId();
-        // 一人一单
-        synchronized (userId.toString().intern()) {
+        /*
+            1.多线程的每个线程都拥有自己的锁监视器，导致锁不共享，它们应该使用共同的锁才能避免超买。
+            2.setIfAbsent（也就是setnx）根据key表示不同的锁，value表示拥有锁的线程，这样就避免了锁误删
+        */
+        String lockPrefix = String.join(":", RedisConstant.SECKILL_VOUCHER_ORDER, userId.toString());
+        SimpleRedisLock redisLock = new SimpleRedisLock(lockPrefix, redisCache.getRedisTemplate());
+        boolean tryLock = redisLock.tryLock(1200);
+        if (!tryLock){
+            return Result.fail(400, "未抢到");
+        }
+        try{
             VoucherOrderService proxy = (VoucherOrderService) AopContext.currentProxy();
             // createVoucherOrder默认是 this.createVoucherOrder，代理对象不能用this
             return proxy.createVoucherOrder(voucherId);
+        }finally {
+            redisLock.unlock();
         }
     }
 
     @Transactional
-    public Result createVoucherOrder(Long voucherId) {
+    public Result createVoucherOrder(Long voucherId)   {
         Long userId = UserHolder.getUser().getId();
         // 查询放外面就会出现多线程问题，要让他们串行判断
         LambdaQueryWrapper<VoucherOrder> lqw = new LambdaQueryWrapper<>();
