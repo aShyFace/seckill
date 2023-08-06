@@ -12,9 +12,12 @@ import com.hmdp.entity.VoucherOrder;
  * @since 2023-08-01 14:03:31
  */
 public interface VoucherOrderService extends IService<VoucherOrder> {
+  Result seckillVoucherRedis(Long voucherId);
 
   Result seckillVoucher(Long voucherId);
 
   Result createVoucherOrder(Long voucherId);
+
+  void createVoucherOrderByOrder(VoucherOrder voucherOrder);
 }
 

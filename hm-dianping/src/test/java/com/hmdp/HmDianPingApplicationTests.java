@@ -5,6 +5,7 @@ import com.hmdp.service.impl.ShopServiceImpl;
 import com.hmdp.utils.RedisIdWorker;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import sun.print.CUPSPrinter;
@@ -22,6 +23,8 @@ public class HmDianPingApplicationTests {
 
   @Resource
   private RedisIdWorker redisIdWorker;
+  @Resource
+  private RabbitTemplate rabbitTemplate;
 
   private ExecutorService es = Executors.newFixedThreadPool(500);
 
@@ -30,8 +33,11 @@ public class HmDianPingApplicationTests {
   //  shopServiceImpl.saveShop2Redis(2L, 10L);
   //}
 
-  public void a(CountDownLatch latch){
-
+  @Test
+  public void testMq(){
+    String qName = "simple.queue";
+    String msg = "hello";
+    rabbitTemplate.convertAndSend(qName, msg);
   }
 
   @Test

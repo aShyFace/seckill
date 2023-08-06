@@ -31,7 +31,7 @@ public class VoucherOrderController {
 
     @PostMapping("seckill/{id}")
     public Result seckillVoucher(@Min(1L) @PathVariable("id") Long voucherId) {
-        Result result = voucherOrderService.seckillVoucher(voucherId);
+        Result result = voucherOrderService.seckillVoucherRedis(voucherId);
         return Result.ok(result);
     }
 

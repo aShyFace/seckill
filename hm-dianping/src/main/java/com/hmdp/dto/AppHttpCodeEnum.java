@@ -14,6 +14,8 @@ public enum AppHttpCodeEnum {
     PARAM_IS_NULL(405, "参数不能为空"),
     PARAM_INVALID(406, "非法参数"),
     FILE_TYPE_ERROR(407, "文件类型错误"),
+    SECKILL_FAILD(408, "抢光了"),
+    ORDER_FAILD(409, "只能抢一次"),
 
 
     SYSTEM_ERROR(500,"出现错误"),

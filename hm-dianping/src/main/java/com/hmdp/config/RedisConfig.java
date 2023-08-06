@@ -1,5 +1,8 @@
 package com.hmdp.config;
 
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.config.Config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -31,4 +34,17 @@ public class RedisConfig {
         template.afterPropertiesSet();
         return template;
     }
+
+
+    @Bean
+    public RedissonClient redissonclient(){
+        //配置类
+        Config config = new Config();
+        //添加redis.地址，这里添加了单点的地址，也可以使用config.useclusterServers()添加集群地址
+        config.useSingleServer().setAddress("redis://127.0.0.1:6379").setPassword("1234");
+        //创建客户端
+        return Redisson.create(config);
+    }
+
+
 }

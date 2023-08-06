@@ -33,7 +33,10 @@ public class RedisIdWorker {
         // 2.生成序列号
         // 2.1.获取当前日期，精确到天（redis中，以冒号为分隔的会创建树形结构保存）
         String date = now.format(DateTimeFormatter.ofPattern("yyyy:MM:dd"));
-        // 2.2.自增长（increment方法会自动创建key）
+        /*
+        * 2.2.自增长（increment方法会自动创建key，相同key调用该方法时，key对应的value会自增1）
+        *       key采用 业务名+时间戳，以防单个key超过2^32（redis int的存储上限）
+        * */
         long count = stringRedisTemplate.opsForValue().increment(String.join("", "icr:", keyPrefix, date));
 
         // 3.拼接并返回
