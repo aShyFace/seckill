@@ -25,6 +25,23 @@ spring:
     virtual-host: "/"
     username: guest
     password: guest
+    listener:
+      simple:
+        prefetch: 1                   # 按需取
+        acknowledge-mode: auto        # 自动模式(根据侦听器检测是正常返回、还是抛出异常来发出 ack/nack)
+        retry:
+          enabled: true
+          initial-interval: 1000
+          multiplier: 3               # 重试时间为x^n，x为这里的值，n为重试次数
+          max-attempts: 5
+          stateless: true             # 消息事务，消息之间是原子的，必须一起成功或失败执行
+    publisher-confirm-type: correlated # 异步回调，有返回结果时调用confirmCallback
+    publisher-returns: true            # 开启publisher-returns，有返回结果时调用returnCallback
+    template:
+      mandatory: true                  # 失败返回returnCallback，false的话会直接丢弃
+
+
+
   jackson:
     default-property-inclusion: non_null # JSON处理时忽略非空字段
 
