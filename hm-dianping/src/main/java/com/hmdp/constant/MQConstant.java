@@ -11,4 +11,9 @@ public class MQConstant {
   public static final String ROUING_KEY2 = "order2.voucher";
 
 
+  /** 配置延迟队列 */
+  public static final String ORDER_DELAY_QUEUE = "voucher.order.delay";
+  public static final String ORDER_DELAY_EXCHANGE = "voucher.order.delay";
+  public static final String ORDER_DELAY_ROUTING_KEY = "voucher.order.delay.#";
+
 }

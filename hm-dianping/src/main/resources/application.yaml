@@ -32,8 +32,8 @@ spring:
         retry:
           enabled: true
           initial-interval: 1000
-          multiplier: 3               # 重试时间为x^n，x为这里的值，n为重试次数
-          max-attempts: 5
+          multiplier: 2               # 重试时间为x^n，x为这里的值，n为重试次数
+          max-attempts: 4
           stateless: true             # 消息事务，消息之间是原子的，必须一起成功或失败执行
     publisher-confirm-type: correlated # 异步回调，有返回结果时调用confirmCallback
     publisher-returns: true            # 开启publisher-returns，有返回结果时调用returnCallback

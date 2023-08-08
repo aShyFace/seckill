@@ -4,6 +4,7 @@ import com.hmdp.service.IShopService;
 import com.hmdp.service.impl.ShopServiceImpl;
 import com.hmdp.utils.MQSender;
 import com.hmdp.utils.RedisIdWorker;
+import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.amqp.rabbit.annotation.Exchange;
@@ -19,7 +20,8 @@ import javax.annotation.Resource;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import static com.hmdp.constant.MQConstant.*;
+@Slf4j
 @SpringBootTest
 @RunWith(SpringRunner.class)
 public class HmDianPingApplicationTests {
@@ -41,9 +43,17 @@ public class HmDianPingApplicationTests {
   //}
 
   //@Test
-  //public void testMq(){
+  //public void testDelayMag(){
   //  String exchangeName = "amq.direct";
   //  String routingKey = "order";
+  //  String msg = "ajs;ldjfhpaosugha";
+  //  mqSender.sendMessage(exchangeName, routingKey, msg);
+  //}
+
+  //@Test
+  //public void testMq(){
+  //  String exchangeName = VOUCHER_ORDER_EXCHANGE;
+  //  String routingKey = "order1";
   //  String msg = "ajs;ldjfhpaosugha";
   //  mqSender.sendMessage(exchangeName, routingKey, msg);
   //}

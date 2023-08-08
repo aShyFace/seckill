@@ -30,6 +30,7 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.hmdp.constant.RedisConstant.*;
+import static com.hmdp.constant.MQConstant.*;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -70,7 +71,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     private BlockingQueue<VoucherOrder> orderTacks = new ArrayBlockingQueue<>(1024 * 1024);
     private static final ExecutorService CERATE_ORDER = Executors.newFixedThreadPool(10);
 
-    public static final String DEFAULT_EXCHANGE = MQConstant.VOUCHER_ORDER_EXCHANGE;
+    public static final String DEFAULT_EXCHANGE = VOUCHER_ORDER_EXCHANGE;
 
 
 
@@ -106,30 +107,35 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         voucherOrder.setVoucherId(voucherId);
         // 发送消息到交换机
         String voucherOrderJson = JsonUtil.object2Json(voucherOrder);
-        mqSender.sendMessage(DEFAULT_EXCHANGE, MQConstant.ROUING_KEY1, voucherOrderJson);
+        mqSender.sendMessage(DEFAULT_EXCHANGE, ROUING_KEY1, voucherOrderJson);
         this.proxy = (VoucherOrderService) AopContext.currentProxy();
         return Result.ok(orderId);
     }
 
-    /*
+    /**
+     * 处理券订单
+     * @param msg 消息
+     *//*
     * @RabbitListener：方法上的注解，声明这个方法是一个消费者方法，需要指定下面的属性：
         @bindings：指定绑定关系，可以有多个。值是@QueueBinding的数组。@QueueBinding包含下面属性：
             @value：这个消费者关联的队列。值是@Queue，代表一个队列
             @exchange：队列所绑定的交换机，值是@Exchange类型
             @key：队列和交换机的对应关系（绑定的BindingKey）
     * */
-    @RabbitListener(bindings = {@QueueBinding(
-          value = @Queue(MQConstant.VOUCHER_ORDER1),
-          exchange = @Exchange(value = DEFAULT_EXCHANGE, type = ExchangeTypes.TOPIC),
-          key = MQConstant.VOUCHER_ORDER_BINDING_KEY1
-        ), @QueueBinding(
-          value = @Queue(MQConstant.VOUCHER_ORDER2),
-          exchange = @Exchange(value = DEFAULT_EXCHANGE, type = ExchangeTypes.TOPIC),
-          key = MQConstant.VOUCHER_ORDER_BINDING_KEY2
-        )
-    })
+    //@RabbitListener(bindings = {@QueueBinding(
+    //      value = @Queue(VOUCHER_ORDER1),
+    //      exchange = @Exchange(value = DEFAULT_EXCHANGE, type = ExchangeTypes.TOPIC),
+    //      key = VOUCHER_ORDER_BINDING_KEY1
+    //    ), @QueueBinding(
+    //      value = @Queue(VOUCHER_ORDER2),
+    //      exchange = @Exchange(value = DEFAULT_EXCHANGE, type = ExchangeTypes.TOPIC),
+    //      key = VOUCHER_ORDER_BINDING_KEY2
+    //    )
+    //})
+    @RabbitListener(queues = VOUCHER_ORDER1)
     public void handlerVoucherOrder(String msg){
         System.out.println("=================handlerVoucherOrder ing================");
+        System.out.println((1/0));
         try{
             VoucherOrder voucherOrder = JsonUtil.json2Object(msg, VoucherOrder.class);
             Long userId = voucherOrder.getUserId();
@@ -154,8 +160,25 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         System.out.println("=================handlerVoucherOrder end================");
     }
 
-    // TODO 死性队列
-    // TODO 惰性队列
+    /**
+     * 直接听队列
+     *
+     * @param msg 订单消息
+     */// 绑定死信队列
+    @RabbitListener(bindings = @QueueBinding(
+      value = @Queue(ORDER_DELAY_QUEUE),
+      exchange = @Exchange(ORDER_DELAY_EXCHANGE),
+      key = ORDER_DELAY_ROUTING_KEY
+    ))
+    public void listenDirectQueue(String msg){
+        log.error(String.join("","出现死信，订单信息为========================"));
+        //System.out.println(1/0);
+        System.out.println(msg);
+        log.error(String.join("","end========================"));
+
+    }
+
+    // TODO 惰信队列
     //@RabbitListener(bindings = @QueueBinding(
     //  value = @Queue("order.delay"),
     //  exchange = @Exchange("amq.direct"),
@@ -167,6 +190,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     //    System.out.println(String.join("","handlerDlQueue end============", msg, "============"));
     //
     //}
+
+
 
 
 
