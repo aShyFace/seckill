@@ -2,6 +2,7 @@ package com.hmdp.controller;
 
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hmdp.dto.AppHttpCodeEnum;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
@@ -9,12 +10,14 @@ import com.hmdp.entity.User;
 import com.hmdp.log.LogApi;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
-import com.hmdp.utils.SystemConstants;
+import com.hmdp.constant.SystemConstants;
 import com.hmdp.utils.UserHolder;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import javax.validation.constraints.Min;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * <p>
@@ -34,6 +37,16 @@ public class BlogController {
     @Resource
     private IUserService userService;
 
+
+    @GetMapping("{blogId}")
+    public Result queryBlogById(@Min(1) @PathVariable Long blogId){
+        Blog blog = blogService.getBlogById(blogId);
+        if (Objects.isNull(blog)){
+            return Result.fail(AppHttpCodeEnum.QUERY_ERROR);
+        }
+        return Result.ok(blog);
+    }
+
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
         // 获取登录用户
@@ -45,12 +58,27 @@ public class BlogController {
         return Result.ok(blog.getId());
     }
 
-    @PutMapping("/like/{id}")
-    public Result likeBlog(@PathVariable("id") Long id) {
-        // 修改点赞数量
-        blogService.update()
-                .setSql("liked = liked + 1").eq("id", id).update();
-        return Result.ok();
+    @PutMapping("/like/{noteId}")
+    public Result likeBlog(@PathVariable("noteId") Long noteId) {
+        //// 修改点赞数量
+        //blogService.update()
+        //        .setSql("liked = liked + 1").eq("id", id).update();
+        boolean res = blogService.updateLikeCount(noteId);
+        if (res){
+            return Result.ok();
+        }
+        Result result = Result.fail(AppHttpCodeEnum.QUERY_ERROR);
+        return result;
+    }
+
+    @GetMapping("/likes/{noteId}")
+    public Result getBlogLikes(@PathVariable("noteId") Long noteId) {
+        List<UserDTO> userList = blogService.getBlogLikes(noteId);
+        if (Objects.nonNull(userList)){
+            return Result.ok();
+        }
+        Result result = Result.fail(AppHttpCodeEnum.QUERY_ERROR);
+        return result;
     }
 
     @GetMapping("/of/me")
@@ -67,19 +95,7 @@ public class BlogController {
 
     @GetMapping("/hot")
     public Result queryHotBlog(@RequestParam(value = "current", defaultValue = "1") Integer current) {
-        // 根据用户查询
-        Page<Blog> page = blogService.query()
-                .orderByDesc("liked")
-                .page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
-        // 获取当前页数据
-        List<Blog> records = page.getRecords();
-        // 查询用户
-        records.forEach(blog ->{
-            Long userId = blog.getUserId();
-            User user = userService.getById(userId);
-            blog.setName(user.getNickName());
-            blog.setIcon(user.getIcon());
-        });
+        List<Blog> records = blogService.queryHotBlog(current);
         return Result.ok(records);
     }
 }

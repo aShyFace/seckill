@@ -19,13 +19,12 @@ public class RedisConstant {
   /** redis秒杀订单key */
   public static final String SECKILL_ORDER_KEY = "seckill:order:";
   /** 数据库秒杀券key */
+  public static final String SECKILL_LUA_SCRIPT_PATH = "seckill.lua";
   public static final String SECKILL_VOUCHER_ORDER = "voucher:order:";
-
 
   public static final String LOCK_SHOP_KEY = "lock:shop:";
   public static final String LOCK_SHOP_VALUE = "1";
   public static final Long LOCK_SHOP_TTL = 10L;
 
-
-  public static final String SECKILL_LUA_SCRIPT_PATH = "seckill.lua";
+  public static final String BLOG_LIKE_COUNT = "blog:liked:";
 }

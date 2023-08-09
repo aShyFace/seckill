@@ -4,7 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.StrUtil;
 import com.hmdp.dto.Result;
 import com.hmdp.log.LogApi;
-import com.hmdp.utils.SystemConstants;
+import com.hmdp.constant.SystemConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,7 +14,7 @@ import java.io.IOException;
 import java.util.UUID;
 
 @Slf4j
-@LogApi
+//@LogApi
 @RestController
 @RequestMapping("upload")
 public class UploadController {
