@@ -52,4 +52,8 @@ public class Follow implements Serializable {
     private LocalDateTime createTime;
 
 
+    public Follow(Long userId, Long followUserId) {
+        this.userId = userId;
+        this.followUserId = followUserId;
+    }
 }

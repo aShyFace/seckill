@@ -1,6 +1,9 @@
 package com.hmdp.service.impl;
 
+import cn.hutool.core.lang.func.Func1;
 import cn.hutool.core.util.BooleanUtil;
+import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -13,14 +16,17 @@ import com.hmdp.log.LogApi;
 import com.hmdp.mapper.BlogMapper;
 import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
+import com.hmdp.utils.BeanCopyUtils;
 import com.hmdp.utils.RedisCache;
 import com.hmdp.utils.UserHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import javax.jws.soap.SOAPBinding;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * <p>
@@ -39,6 +45,26 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
   private BlogMapper blogMapper;
   @Resource
   private RedisCache redisCache;
+
+
+  //@PostConstruct
+  //private void init(){
+  //  initBlogLikeData();
+  //}
+  //private void initBlogLikeData() {
+  //  List<Blog> blogList = list();
+  //  Iterator<Blog> iterator = blogList.iterator();
+  //  while (iterator.hasNext()) {
+  //    Blog blog = iterator.next();
+  //    String likeKey = String.join("", RedisConstant.BLOG_LIKE_COUNT, blog.getId().toString());
+  //    Long number = redisCache.getRedisTemplate().opsForZSet().zCard(likeKey);
+  //    if (Objects.isNull(number) || number <= 0) {
+  //      redisCache.getRedisTemplate().opsForZSet().add(likeKey, -1, -1);
+  //      // 同步数据库中的数据
+  //    }
+  //  }
+  //}
+
 
   @Override
   public Blog getBlogById(Long blogId) {
@@ -106,11 +132,30 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements IB
 
   @Override
   public List<UserDTO> getBlogLikes(Long noteId) {
-    return null;
+    //String s = "10";
+    //long l = Long.parseLong(s);
+
+    List<UserDTO> userDTOList = null;
+    String likeKey = String.join("", RedisConstant.BLOG_LIKE_COUNT, noteId.toString());
+    Set<Long> top5 = redisCache.getRedisTemplate().opsForZSet().range(likeKey, 0, 4);
+    if (Objects.nonNull(top5) && top5.size() != 0) { // 因为初始化zset的值为-1，所以为空时只有一个元素
+      List<Long> userIdList = new ArrayList<>(top5);
+      LambdaQueryWrapper<User> lqw = new LambdaQueryWrapper<>();
+      String idString = StrUtil.join(",", userIdList);
+      lqw.in(User::getId, userIdList).last("FIELD(id," + idString +")");
+
+      List<User> userList = userService.listByIds(userIdList);
+      userDTOList = BeanCopyUtils.copyBeanList(userList, UserDTO.class);
+    }
+    return userDTOList;
   }
 
   private boolean blogIsLiked(Long blogId){
-    Long userId = UserHolder.getUser().getId();
+    UserDTO user = UserHolder.getUser();
+    if (Objects.isNull(user)){
+      return false;
+    }
+    Long userId = user.getId();
     String likeKey = String.join("", RedisConstant.BLOG_LIKE_COUNT, blogId.toString());
     Double socre = redisCache.getRedisTemplate().opsForZSet().score(likeKey, userId);
     return Objects.nonNull(socre);

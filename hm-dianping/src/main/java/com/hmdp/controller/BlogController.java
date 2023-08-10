@@ -2,6 +2,7 @@ package com.hmdp.controller;
 
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.hmdp.constant.RedisConstant;
 import com.hmdp.dto.AppHttpCodeEnum;
 import com.hmdp.dto.Result;
 import com.hmdp.dto.UserDTO;
@@ -38,6 +39,27 @@ public class BlogController {
     private IUserService userService;
 
 
+
+    /**
+     * 通过用户id查询博客
+     *
+     * @param current 当前
+     * @param id      id
+     * @return {@link Result}
+     */
+    @GetMapping("/of/user")
+    public Result queryBlogByUserId(
+      @RequestParam(value = "current", defaultValue = "1") Integer current,
+      @RequestParam("id") Long id) {
+        // 根据用户查询
+        Page<Blog> page = blogService.query()
+          .eq("user_id", id).page(new Page<>(current, SystemConstants.MAX_PAGE_SIZE));
+        // 获取当前页数据
+        List<Blog> records = page.getRecords();
+        return Result.ok(records);
+    }
+
+
     @GetMapping("{blogId}")
     public Result queryBlogById(@Min(1) @PathVariable Long blogId){
         Blog blog = blogService.getBlogById(blogId);
@@ -54,6 +76,8 @@ public class BlogController {
         blog.setUserId(user.getId());
         // 保存探店博文
         blogService.save(blog);
+        //// 保存点赞数到redis
+        //String likeKey = String.join("", RedisConstant.BLOG_LIKE_COUNT, noteId.toString());
         // 返回id
         return Result.ok(blog.getId());
     }
@@ -75,7 +99,7 @@ public class BlogController {
     public Result getBlogLikes(@PathVariable("noteId") Long noteId) {
         List<UserDTO> userList = blogService.getBlogLikes(noteId);
         if (Objects.nonNull(userList)){
-            return Result.ok();
+            return Result.ok(userList);
         }
         Result result = Result.fail(AppHttpCodeEnum.QUERY_ERROR);
         return result;

@@ -27,4 +27,6 @@ public class RedisConstant {
   public static final Long LOCK_SHOP_TTL = 10L;
 
   public static final String BLOG_LIKE_COUNT = "blog:liked:";
+  public static final String FOLLOW_USERS = "follow:";
+
 }
