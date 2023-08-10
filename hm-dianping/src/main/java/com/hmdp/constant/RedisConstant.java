@@ -28,5 +28,6 @@ public class RedisConstant {
 
   public static final String BLOG_LIKE_COUNT = "blog:liked:";
   public static final String FOLLOW_USERS = "follow:";
+  public static final String FEED_USERS = "feed:";
 
 }

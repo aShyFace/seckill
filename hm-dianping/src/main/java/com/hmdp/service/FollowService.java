@@ -2,6 +2,7 @@ package com.hmdp.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.hmdp.dto.UserDTO;
+import com.hmdp.entity.Blog;
 import com.hmdp.entity.Follow;
 
 import java.util.List;
@@ -19,5 +20,6 @@ public interface FollowService extends IService<Follow> {
   boolean isFollow(Long followUserId);
 
   List<UserDTO> queryCommonFollow(Long followUserId);
+
 }
 

@@ -7,10 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hmdp.constant.RedisConstant;
 import com.hmdp.entity.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.BoundSetOperations;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.ValueOperations;
+import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -308,6 +305,10 @@ public class RedisCache
         return setOperation;
     }
 
+    public <T> Long addCacheSet(final String key, final T t) {
+        return redisTemplate.opsForSet().add(key, t);
+    }
+
     /**
      * 获得缓存的set
      *
@@ -413,6 +414,40 @@ public class RedisCache
     {
         return redisTemplate.opsForHash().multiGet(key, hKeys);
     }
+
+
+    public <T> Boolean addCacheZSet(final String key, final T value, final Long score){
+        return redisTemplate.opsForZSet().add(key, value, score);
+    }
+
+    public <T> Double getSocreZSet(final String key, final T value){
+        return redisTemplate.opsForZSet().score(key, value);
+    }
+
+    public Set<Long> getRangeZSet(final String key, final long start, final long end){
+        return redisTemplate.opsForZSet().range(key, start, end);
+    }
+
+    public <V> Set<ZSetOperations.TypedTuple<V>>  getRangeByScoreWithScores(final String key, final Long max, final Long min,
+                                                                            final Long offset, final Long count){
+        return redisTemplate.opsForZSet().reverseRangeByScoreWithScores(key, min, max, offset, count);
+    }
+
+    public <T> Long deleteCacheZSet(final String key, final T value){
+
+        return redisTemplate.opsForZSet().remove(key, value);
+    }
+
+
+
+    public <T> Long deleteCacheSet(final String key, final T value){
+        return redisTemplate.opsForSet().remove(key, value);
+    }
+
+    public <T> Set<T> intersectCacheSet(final String key1, final String key2){
+        return redisTemplate.opsForSet().intersect(key1, key2);
+    }
+
 
     /**
      * 获得缓存的基本对象列表

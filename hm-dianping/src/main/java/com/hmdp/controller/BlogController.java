@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.hmdp.constant.RedisConstant;
 import com.hmdp.dto.AppHttpCodeEnum;
 import com.hmdp.dto.Result;
+import com.hmdp.dto.ScrollResult;
 import com.hmdp.dto.UserDTO;
 import com.hmdp.entity.Blog;
 import com.hmdp.entity.User;
@@ -13,6 +14,7 @@ import com.hmdp.service.IBlogService;
 import com.hmdp.service.IUserService;
 import com.hmdp.constant.SystemConstants;
 import com.hmdp.utils.UserHolder;
+import com.sun.istack.internal.NotNull;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -28,7 +30,7 @@ import java.util.Objects;
  * @author 虎哥
  * @since 2021-12-22
  */
-@LogApi
+//@LogApi
 @RestController
 @RequestMapping("/blog")
 public class BlogController {
@@ -71,15 +73,12 @@ public class BlogController {
 
     @PostMapping
     public Result saveBlog(@RequestBody Blog blog) {
-        // 获取登录用户
-        UserDTO user = UserHolder.getUser();
-        blog.setUserId(user.getId());
-        // 保存探店博文
-        blogService.save(blog);
-        //// 保存点赞数到redis
-        //String likeKey = String.join("", RedisConstant.BLOG_LIKE_COUNT, noteId.toString());
+        Blog b = blogService.saveBlog(blog);
+        if (Objects.isNull(blog)){
+            return Result.fail(AppHttpCodeEnum.INSTER_ERROR);
+        }
         // 返回id
-        return Result.ok(blog.getId());
+        return Result.ok(b.getId());
     }
 
     @PutMapping("/like/{noteId}")
@@ -122,4 +121,13 @@ public class BlogController {
         List<Blog> records = blogService.queryHotBlog(current);
         return Result.ok(records);
     }
+
+
+    @GetMapping("/of/follow")
+    public Result queryBlogofFollow(@Min(1L) @RequestParam("lastId")Long max,
+                                    @NotNull @RequestParam(value = "offset", defaultValue="0")Long offset) {
+        ScrollResult scrollResult = blogService.queryBlogOfFollow(max, offset);
+        return Result.ok(scrollResult);
+    }
+
 }
