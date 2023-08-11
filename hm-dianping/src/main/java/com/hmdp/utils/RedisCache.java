@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.hmdp.constant.RedisConstant;
 import com.hmdp.entity.Shop;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.connection.BitFieldSubCommands;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -416,6 +417,14 @@ public class RedisCache
     }
 
 
+    /**
+     * 向zset添加缓存
+     *
+     * @param key   关键
+     * @param value 价值
+     * @param score 分数
+     * @return {@link Boolean}
+     */
     public <T> Boolean addCacheZSet(final String key, final T value, final Long score){
         return redisTemplate.opsForZSet().add(key, value, score);
     }
@@ -440,12 +449,34 @@ public class RedisCache
 
 
 
+    /**
+     * 删除set中的缓存
+     *
+     * @param key   关键
+     * @param value 价值
+     * @return {@link Long}
+     */
     public <T> Long deleteCacheSet(final String key, final T value){
         return redisTemplate.opsForSet().remove(key, value);
     }
 
     public <T> Set<T> intersectCacheSet(final String key1, final String key2){
         return redisTemplate.opsForSet().intersect(key1, key2);
+    }
+
+
+    public <T> boolean setBitMap(final T key, final long offset, boolean value){
+        Boolean success = redisTemplate.opsForValue().setBit(key, offset, value);
+        return BooleanUtil.isTrue(success);
+    }
+
+    public <T> List getBitMapField(final T key, final boolean unsigned, final int field, final long offset){
+        if (unsigned) {
+            // BitFieldSubCommands.create()对象不能拿出来成变量，好像是创建的时候不调用后面这些方法设置参数的话，默认无参，所以怎么弄返回结果都是0
+            return redisTemplate.opsForValue().bitField(key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.unsigned(field)).valueAt(offset));
+        }else {
+            return redisTemplate.opsForValue().bitField(key, BitFieldSubCommands.create().get(BitFieldSubCommands.BitFieldType.signed(field)).valueAt(offset));
+        }
     }
 
 

@@ -128,4 +128,21 @@ public class UserController {
         // 返回
         return Result.ok(info);
     }
+
+    @PostMapping("/sign")
+    public Result sign(){
+        boolean success = userInfoService.sign();
+        if (success){
+            return Result.ok(AppHttpCodeEnum.SUCCESS);
+        }
+        return Result.fail(500, "系统开小差了， 请重试");
+    }
+
+    @PostMapping("/sign/count")
+    public Result signCount(){
+        int count = userInfoService.signCount();
+        return Result.ok(count);
+    }
+
+
 }

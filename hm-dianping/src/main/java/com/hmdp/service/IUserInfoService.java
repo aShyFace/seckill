@@ -13,4 +13,6 @@ import com.hmdp.entity.UserInfo;
  */
 public interface IUserInfoService extends IService<UserInfo> {
 
+  boolean sign();
+  int signCount();
 }

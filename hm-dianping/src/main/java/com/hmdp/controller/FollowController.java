@@ -12,11 +12,9 @@ import com.hmdp.entity.User;
 import com.hmdp.log.LogApi;
 import com.hmdp.service.FollowService;
 import com.hmdp.service.IUserService;
-import com.sun.istack.internal.NotNull;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
-import javax.jnlp.FileSaveService;
 import javax.validation.constraints.Min;
 import java.util.List;
 import java.util.Objects;

@@ -30,4 +30,6 @@ public class RedisConstant {
   public static final String FOLLOW_USERS = "follow:";
   public static final String FEED_USERS = "feed:";
 
+  public static final String SHOP_GEO_TYPE_KEY = "shop:geo:type:";
+  public static final String USER_SIGN_BITMAP = "sign:user:";
 }

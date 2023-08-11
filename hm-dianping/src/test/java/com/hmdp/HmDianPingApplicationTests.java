@@ -1,32 +1,26 @@
 package com.hmdp;
 
 import com.hmdp.service.IShopService;
-import com.hmdp.service.impl.ShopServiceImpl;
 import com.hmdp.utils.MQSender;
+import com.hmdp.utils.RedisCache;
 import com.hmdp.utils.RedisIdWorker;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.amqp.rabbit.annotation.Exchange;
-import org.springframework.amqp.rabbit.annotation.Queue;
-import org.springframework.amqp.rabbit.annotation.QueueBinding;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import sun.print.CUPSPrinter;
 
 import javax.annotation.Resource;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import static com.hmdp.constant.MQConstant.*;
+
 @Slf4j
 @SpringBootTest
 @RunWith(SpringRunner.class)
 public class HmDianPingApplicationTests {
   @Resource
-  public ShopServiceImpl shopServiceImpl;
+  public IShopService shopService;
 
   @Resource
   private RedisIdWorker redisIdWorker;
@@ -34,12 +28,33 @@ public class HmDianPingApplicationTests {
   private RabbitTemplate rabbitTemplate;
   @Resource
   private MQSender mqSender;
+  @Resource
+  private RedisCache redisCache;
 
   private ExecutorService es = Executors.newFixedThreadPool(500);
 
+  public HmDianPingApplicationTests() {
+  }
+
   //@Test
-  //public void testSaveShop() throws InterruptedException {
-  //  shopServiceImpl.saveShop2Redis(2L, 10L);
+  //public void testLoadShop2Redis() {
+  //  List<Shop> shopList = shopService.list();
+  //  Map<Long, List<Shop>> typeMap = shopList.stream().collect(
+  //      Collectors.groupingBy(Shop::getTypeId));
+  //
+  //  Iterator<Map.Entry<Long, List<Shop>>> iterator = typeMap.entrySet().iterator();
+  //  while (iterator.hasNext()){
+  //    Map.Entry<Long, List<Shop>> typeEntry = iterator.next();
+  //    String typeKey = String.join("",
+  //        RedisConstant.SHOP_GEO_TYPE_KEY, typeEntry.getKey().toString());
+  //    List<RedisGeoCommands.GeoLocation> locationList = typeEntry.getValue().stream().map(shop -> {
+  //        Point pt = new Point(shop.getX(), shop.getY());
+  //        // 保存的是shopId，所以这里是Long
+  //        return new RedisGeoCommands.GeoLocation<>(shop.getId(), pt);
+  //      }
+  //    ).collect(Collectors.toList());
+  //    redisCache.getRedisTemplate().opsForGeo().add(typeKey, locationList);
+  //  }
   //}
 
   //@Test
@@ -94,5 +109,8 @@ public class HmDianPingApplicationTests {
   //  System.out.println("spend: " + (et - st));
   //}
 
-
+  @Test
+  public void teststart(){
+    System.out.println("ok");
+  }
 }
