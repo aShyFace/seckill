@@ -12,7 +12,7 @@ import org.apache.ibatis.annotations.Update;
  *  Mapper 接口
  * </p>
  *
- * @author 虎哥
+ * @author Zhi
  * @since 2021-12-22
  */
 @Mapper

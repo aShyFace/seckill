@@ -12,7 +12,7 @@ import java.util.List;
  *  服务类
  * </p>
  *
- * @author 虎哥
+ * @author Zhi
  * @since 2021-12-22
  */
 public interface IBlogService extends IService<Blog> {

@@ -50,5 +50,5 @@ mybatis-plus:
 
 logging:
   level:
-#    com.hmdp: info
-    com.hmdp: debug
+    com.hmdp: info
+#    com.hmdp: debug

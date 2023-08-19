@@ -36,12 +36,14 @@ import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 
 /**
@@ -73,6 +75,26 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
 
     public static final String DEFAULT_EXCHANGE = VOUCHER_ORDER_EXCHANGE;
 
+    @PostConstruct
+    public void initStockAndOrder(){
+        List<SeckillVoucher> seckillVoucherList = seckillVoucherMapper.selectList(null);
+        if (Objects.nonNull(seckillVoucherList)){
+            for (SeckillVoucher sv: seckillVoucherList) {
+                String key = String.join("", SECKILL_STOCK_KEY, sv.getVoucherId().toString());
+                redisCache.setCacheObject(key, sv.getStock());
+            }
+        }
+
+        List<VoucherOrder> voucherOrderList = voucherOrderMapper.selectList(null);
+        if (Objects.nonNull(voucherOrderList)){
+            for (VoucherOrder vo:voucherOrderList) {
+                String key = String.join("", SECKILL_ORDER_KEY, vo.getVoucherId().toString());
+                redisCache.addCacheSet(key, vo.getUserId());
+            }
+        }else{
+            redisCache.addCacheSet("seckill:order:11", 1013);
+        }
+    }
 
 
     //@Override
@@ -134,8 +156,8 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     //})
     @RabbitListener(queues = VOUCHER_ORDER1)
     public void handlerVoucherOrder(String msg){
-        System.out.println("=================handlerVoucherOrder ing================");
-        System.out.println((1/0));
+        log.debug("=================handlerVoucherOrder ing================");
+        //System.out.println((1/0));
         try{
             VoucherOrder voucherOrder = JsonUtil.json2Object(msg, VoucherOrder.class);
             Long userId = voucherOrder.getUserId();
@@ -157,7 +179,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
             // 到了最大重试次数才会报错，也就是管你试错了几次都只报一次的错
             log.error("订单处理异常", e);
         }
-        System.out.println("=================handlerVoucherOrder end================");
+        log.debug("=================handlerVoucherOrder end================");
     }
 
     /**
@@ -171,11 +193,11 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
       key = ORDER_DELAY_ROUTING_KEY
     ))
     public void listenDirectQueue(String msg){
-        log.error(String.join("","出现死信，订单信息为========================"));
-        //System.out.println(1/0);
-        System.out.println(msg);
-        log.error(String.join("","end========================"));
-
+        //log.error(String.join("","出现死信，订单信息为========================"));
+        ////System.out.println(1/0);
+        //System.out.println(msg);
+        //log.error(String.join("","end========================"));
+        handlerVoucherOrder(msg);
     }
 
     // TODO 惰信队列
@@ -190,9 +212,6 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
     //    System.out.println(String.join("","handlerDlQueue end============", msg, "============"));
     //
     //}
-
-
-
 
 
     /**
@@ -245,6 +264,7 @@ public class VoucherOrderServiceImpl extends ServiceImpl<VoucherOrderMapper, Vou
         Long userId = UserHolder.getUser().getId();
         String orderKey = String.join("", SECKILL_ORDER_KEY, voucherId.toString());
         List<String> keys = Arrays.asList(stockKey, orderKey);
+        //List<String> argv = Arrays.asList(userId.toString());
         DefaultRedisScript<Long> script = RedisLua.getSDefaultCRIPT();
         Long result = (Long) redisCache.redisTemplate.execute(script, keys, userId);
         if (Objects.isNull(result)){

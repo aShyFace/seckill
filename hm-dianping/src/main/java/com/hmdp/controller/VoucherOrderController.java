@@ -19,10 +19,10 @@ import javax.validation.constraints.Min;
  *  前端控制器
  * </p>
  *
- * @author 虎哥
+ * @author Zhi
  * @since 2021-12-22
  */
-@LogApi
+//@LogApi
 @RestController
 @RequestMapping("/voucher-order")
 public class VoucherOrderController {
@@ -31,7 +31,24 @@ public class VoucherOrderController {
 
     @PostMapping("seckill/{id}")
     public Result seckillVoucher(@Min(1L) @PathVariable("id") Long voucherId) {
+        // 500张票，不然体现不出差距
+        /*
+        * 使用实现的秒杀，各项指标为（出现无响应的情况，大概有3秒的时间）
+        *   平均时长：129mm；最小时长：91mm；最大时长：1553mm；吞吐量：537/sec；
+        * */
         Result result = voucherOrderService.seckillVoucherRedisMq(voucherId);
+
+        /* 500张票，不然体现不出差距
+        * 使用实现的秒杀，各项指标为
+        *   平均时长：157mm；最小时长：86mm；最大时长：1711mm；吞吐量：482/sec；
+        * */
+        //Result result = voucherOrderService.seckillVoucherRedis(voucherId);
+
+        /* 模拟1008个用户发送100次请求的情况
+        * 直接访问数据库实现的秒杀，各项指标为（出现无响应的情况，大概有8秒的时间）
+        *   平均时长：325mm；最小时长：116mm；最大时长：2282mm；吞吐量：285/sec；
+        * */
+        //Result result = voucherOrderService.seckillVoucher(voucherId);
         return Result.ok(result);
     }
 

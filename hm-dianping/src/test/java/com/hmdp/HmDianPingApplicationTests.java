@@ -1,9 +1,15 @@
 package com.hmdp;
 
+import cn.hutool.core.bean.BeanUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.hmdp.constant.RedisConstant;
+import com.hmdp.dto.LoginFormDTO;
+import com.hmdp.dto.Result;
+import com.hmdp.dto.UserDTO;
+import com.hmdp.entity.User;
+import com.hmdp.mapper.UserMapper;
 import com.hmdp.service.IShopService;
-import com.hmdp.utils.MQSender;
-import com.hmdp.utils.RedisCache;
-import com.hmdp.utils.RedisIdWorker;
+import com.hmdp.utils.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,8 +18,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
+import java.io.BufferedWriter;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @SpringBootTest
@@ -21,6 +33,8 @@ import java.util.concurrent.Executors;
 public class HmDianPingApplicationTests {
   @Resource
   public IShopService shopService;
+  @Resource
+  private UserMapper userMapper;
 
   @Resource
   private RedisIdWorker redisIdWorker;
@@ -110,7 +124,36 @@ public class HmDianPingApplicationTests {
   //}
 
   @Test
-  public void teststart(){
-    System.out.println("ok");
+  public void teststart() throws IOException {
+    redisCache.addCacheZSet("seckill:voucher:11", 11, 1009L);
+    //String tokenFile = "/home/zhi/Documents/jemter/token.txt";
+    //BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(tokenFile));
+    //for (User user: userMapper.selectList(null) ) {
+    //  String token = createTokenFile(user);
+    //  bufferedWriter.write(token);
+    //  bufferedWriter.newLine();
+    //}
+    ////刷新流（将缓存区中的数据写入输出流）
+    //bufferedWriter.flush();
+    ////关闭资源
+    //bufferedWriter.close();
   }
+
+  public String createTokenFile(User user) {
+    // 7.1 生成随机token
+    String token = UUID.randomUUID().toString().replaceAll("-", "");
+
+    // 7.2 user转为hash存储
+    UserDTO userDTO = BeanUtil.copyProperties(user, UserDTO.class);
+    Map<String, Object> userDTOMap = BeanUtil.beanToMap(userDTO);
+    String user_token_key = String.join("", RedisConstant.LOGIN_USER_TOKEN, token);
+    redisCache.setCacheMap(user_token_key, userDTOMap);
+
+    // 7.3 设置有效期（记得加随机值）
+    redisCache.expire(user_token_key, RedisConstant.LOGIN_USER_TOKEN_TTL,
+      RedisConstant.LOGIN_USER_TOKEN_TTL_SLAT, TimeUnit.MINUTES);
+    return token;
+  }
+
+
 }
